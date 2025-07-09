@@ -1,5 +1,6 @@
 import graphene
 from graphene_django import DjangoObjectType
+from graphene import relay
 from django.db import transaction
 from django.utils import timezone
 from django.core.validators import validate_email
@@ -7,10 +8,8 @@ from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from decimal import Decimal
 from graphene_django.filter import DjangoFilterConnectionField
 from graphql import GraphQLError
-from graphene import relay
 from .filters import CustomerFilter, ProductFilter, OrderFilter
 from .models import Customer, Product, Order
-
 
 # ==============================
 # GraphQL Types
@@ -22,19 +21,16 @@ class CustomerType(DjangoObjectType):
         interfaces = (relay.Node,)
 
 
-
 class ProductType(DjangoObjectType):
     class Meta:
         model = Product
         interfaces = (relay.Node,)
 
 
-
 class OrderType(DjangoObjectType):
     class Meta:
         model = Order
         interfaces = (relay.Node,)
-
 
 
 # ==============================
@@ -75,11 +71,12 @@ class CreateCustomer(graphene.Mutation):
             if Customer.objects.filter(email=input.email).exists():
                 raise GraphQLError("Email already exists.")
             validate_email(input.email)
-            customer = Customer.objects.create(
+            customer = Customer(
                 name=input.name,
                 email=input.email,
                 phone=input.phone or ''
             )
+            customer.save()  # explicitly called
             return CreateCustomer(customer=customer, message="Customer created successfully.")
         except ValidationError:
             raise GraphQLError("Invalid email format.")
@@ -104,11 +101,12 @@ class BulkCreateCustomers(graphene.Mutation):
                     if Customer.objects.filter(email=cust.email).exists():
                         raise GraphQLError("Email already exists.")
 
-                    customer = Customer.objects.create(
+                    customer = Customer(
                         name=cust.name,
                         email=cust.email,
                         phone=cust.phone or ''
                     )
+                    customer.save()  # explicitly called
                     created.append(customer)
                 except ValidationError:
                     errors.append(f"Entry {i + 1}: Invalid email format.")
@@ -131,11 +129,12 @@ class CreateProduct(graphene.Mutation):
             if input.stock < 0:
                 raise GraphQLError("Stock cannot be negative.")
 
-            product = Product.objects.create(
+            product = Product(
                 name=input.name,
                 price=input.price,
                 stock=input.stock
             )
+            product.save()  # explicitly called
             return CreateProduct(product=product)
         except Exception as e:
             raise GraphQLError(str(e))
@@ -161,11 +160,12 @@ class CreateOrder(graphene.Mutation):
             raise GraphQLError("Some product IDs are invalid.")
 
         total_amount = sum([product.price for product in products])
-        order = Order.objects.create(
+        order = Order(
             customer=customer,
             order_date=input.order_date or timezone.now(),
             total_amount=total_amount
         )
+        order.save()  # explicitly called
         order.products.set(products)
 
         return CreateOrder(order=order)
