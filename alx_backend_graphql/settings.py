@@ -40,9 +40,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'graphene_django',
     'django_filters',
-    'crm.apps.CrmConfig',
-    'django_crontab'
-]
+    'crm.apps.CrmConfig'
+    ]
 INSTALLED_APPS += crm_settings.INSTALLED_APPS
 
 
