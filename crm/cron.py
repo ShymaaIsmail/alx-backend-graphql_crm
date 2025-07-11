@@ -1,35 +1,49 @@
 from datetime import datetime
 import requests
 
+# Task 2 — Heartbeat Logger
 def log_crm_heartbeat():
     timestamp = datetime.now().strftime("%d/%m/%Y-%H:%M:%S")
     try:
         response = requests.post("http://localhost:8000/graphql", json={"query": "{ hello }"})
-        alive = response.json().get("data", {}).get("hello", "No response")
+        hello = response.json().get("data", {}).get("hello", "No response")
     except Exception:
-        alive = "No response"
-
+        hello = "GraphQL unavailable"
     with open("/tmp/crm_heartbeat_log.txt", "a") as log:
-        log.write(f"{timestamp} CRM is alive - GraphQL says: {alive}\n")
+        log.write(f"{timestamp} CRM is alive - {hello}\n")
 
+
+# ✅ Task 3 — Update Low Stock Products using gql
+from gql import gql, Client
+from gql.transport.requests import RequestsHTTPTransport
 
 def update_low_stock():
-    import requests
-    from datetime import datetime
-    mutation = '''
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    # Set up gql transport
+    transport = RequestsHTTPTransport(
+        url="http://localhost:8000/graphql",
+        verify=False,
+        retries=3,
+    )
+    client = Client(transport=transport, fetch_schema_from_transport=True)
+
+    # Define mutation
+    mutation = gql("""
     mutation {
         updateLowStockProducts {
             success
             updatedProducts
         }
     }
-    '''
+    """)
+
     try:
-        response = requests.post("http://localhost:8000/graphql", json={"query": mutation})
-        data = response.json().get("data", {}).get("updateLowStockProducts", {})
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        result = client.execute(mutation)
+        updates = result.get("updateLowStockProducts", {}).get("updatedProducts", [])
+
         with open("/tmp/low_stock_updates_log.txt", "a") as log:
-            for product in data.get("updatedProducts", []):
+            for product in updates:
                 log.write(f"{timestamp} - {product}\n")
     except Exception as e:
         with open("/tmp/low_stock_updates_log.txt", "a") as log:

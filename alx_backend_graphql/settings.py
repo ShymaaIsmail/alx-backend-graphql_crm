@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
 from pathlib import Path
+from crm import settings as crm_settings
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -42,15 +43,13 @@ INSTALLED_APPS = [
     'crm.apps.CrmConfig',
     'django_crontab'
 ]
+INSTALLED_APPS += crm_settings.INSTALLED_APPS
+
 
 GRAPHENE = {
     'SCHEMA': 'alx_backend_graphql.schema.schema',  # adjust path if needed
 }
 
-CRONJOBS = [
-    ('*/5 * * * *', 'crm.cron.log_crm_heartbeat'),
-    ('0 */12 * * *', 'crm.cron.update_low_stock'),
-]
 
 
 MIDDLEWARE = [
