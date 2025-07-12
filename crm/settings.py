@@ -21,3 +21,4 @@ CELERY_BEAT_SCHEDULE = {
     },
 }
 
+CELERY_IMPORTS = ('crm.tasks',)

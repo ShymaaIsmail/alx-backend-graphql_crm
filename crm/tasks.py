@@ -16,28 +16,23 @@ def generate_crm_report():
     query = gql("""
     query {
         allCustomers {
-            totalCount
+            edges { node { id } }
         }
         allOrders {
-            totalCount
-            edges {
-                node {
-                    totalAmount
-                }
-            }
+            edges { node { totalAmount } }
         }
     }
     """)
 
     try:
         result = client.execute(query)
-        total_customers = result["allCustomers"]["totalCount"]
-        total_orders = result["allOrders"]["totalCount"]
-        total_revenue = sum(float(order["node"]["totalAmount"]) for order in result["allOrders"]["edges"])
+        total_customers = len(result["allCustomers"]["edges"])
+        orders = result["allOrders"]["edges"]
+        total_orders = len(orders)
+        total_revenue = sum(float(order["node"]["totalAmount"]) for order in orders)
 
-        log_line = f"{timestamp} - Report: {total_customers} customers, {total_orders} orders, {total_revenue:.2f} revenue\n"
         with open("/tmp/crm_report_log.txt", "a") as log:
-            log.write(log_line)
+            log.write(f"{timestamp} - Report: {total_customers} customers, {total_orders} orders, {total_revenue:.2f} revenue\n")
     except Exception as e:
         with open("/tmp/crm_report_log.txt", "a") as log:
             log.write(f"{timestamp} - Error: {str(e)}\n")
