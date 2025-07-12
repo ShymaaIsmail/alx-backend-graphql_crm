@@ -8,6 +8,7 @@ from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from decimal import Decimal
 from graphene_django.filter import DjangoFilterConnectionField
 from graphql import GraphQLError
+
 from .filters import CustomerFilter, ProductFilter, OrderFilter
 from .models import Customer, Product, Order
 
@@ -76,7 +77,7 @@ class CreateCustomer(graphene.Mutation):
                 email=input.email,
                 phone=input.phone or ''
             )
-            customer.save()  # explicitly called
+            customer.save()
             return CreateCustomer(customer=customer, message="Customer created successfully.")
         except ValidationError:
             raise GraphQLError("Invalid email format.")
@@ -100,13 +101,12 @@ class BulkCreateCustomers(graphene.Mutation):
                     validate_email(cust.email)
                     if Customer.objects.filter(email=cust.email).exists():
                         raise GraphQLError("Email already exists.")
-
                     customer = Customer(
                         name=cust.name,
                         email=cust.email,
                         phone=cust.phone or ''
                     )
-                    customer.save()  # explicitly called
+                    customer.save()
                     created.append(customer)
                 except ValidationError:
                     errors.append(f"Entry {i + 1}: Invalid email format.")
@@ -134,7 +134,7 @@ class CreateProduct(graphene.Mutation):
                 price=input.price,
                 stock=input.stock
             )
-            product.save()  # explicitly called
+            product.save()
             return CreateProduct(product=product)
         except Exception as e:
             raise GraphQLError(str(e))
@@ -165,13 +165,13 @@ class CreateOrder(graphene.Mutation):
             order_date=input.order_date or timezone.now(),
             total_amount=total_amount
         )
-        order.save()  # explicitly called
+        order.save()
         order.products.set(products)
 
         return CreateOrder(order=order)
 
 
-
+# Task 3 — Update Low Stock Products Mutation
 class UpdateLowStockProducts(graphene.Mutation):
     success = graphene.Boolean()
     updated_products = graphene.List(graphene.String)
@@ -184,6 +184,7 @@ class UpdateLowStockProducts(graphene.Mutation):
             updated.append(f"{product.name} -> {product.stock}")
         return UpdateLowStockProducts(success=True, updated_products=updated)
 
+
 # ==============================
 # Main Mutation & Query classes
 # ==============================
@@ -194,7 +195,6 @@ class Mutation(graphene.ObjectType):
     create_product = CreateProduct.Field()
     create_order = CreateOrder.Field()
     update_low_stock_products = UpdateLowStockProducts.Field()
-
 
 
 class Query(graphene.ObjectType):

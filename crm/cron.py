@@ -17,6 +17,9 @@ def log_crm_heartbeat():
 from gql import gql, Client
 from gql.transport.requests import RequestsHTTPTransport
 
+
+"""Task 3 — Update Low Stock Products
+This task updates low stock products by executing a GraphQL mutation."""
 def update_low_stock():
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
